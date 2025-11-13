@@ -1,5 +1,6 @@
 using UnityEngine;
-
+using System.Collections;
+using System.Collections.Generic;
 public class PlayerLook : MonoBehaviour
 {
     public float sensitivity = 2f; // mouse sensitivity

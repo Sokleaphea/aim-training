@@ -4,14 +4,20 @@ using UnityEngine;
 
 public class Target : MonoBehaviour
 {
+    public float maxRadius = 0.6f;
+    private float spawnTime;
+
     public enum MovementType
-    { Horizontal, Vertical }
+    {
+        Horizontal,
+        Vertical
+    }
 
     [Header("Movement Settings")]
     public MovementType movementType = MovementType.Horizontal;
     public float movementRange = 5f;
     public float movementSpeed = 2f;
-    public float minYPosition = 0f; 
+    public float minYPosition = 0f;
 
     private Vector3 startPosition;
     private float movementDirection = 1f;
@@ -19,31 +25,43 @@ public class Target : MonoBehaviour
 
     void Start()
     {
+        spawnTime = Time.time;
         startPosition = transform.position;
-        
-        movementType = MovementType.Horizontal;
-        
+
         if (minYPosition == 0f)
         {
             minYPosition = startPosition.y;
         }
-        
-        // Debug.Log($"Target started at {startPosition}, Movement Type: {movementType}, Speed: {movementSpeed}, Range: {movementRange}, Min Y: {minYPosition}");
+    }
+
+    public void OnHit(Vector3 hitPoint)
+    {
+        Collider targetCollider = GetComponent<Collider>();
+        float distance = Vector3.Distance(hitPoint, targetCollider.bounds.center);
+        float accuracy = Mathf.Clamp01(1 - (distance / maxRadius));
+
+        int score = Mathf.RoundToInt(accuracy * 100);
+
+        float reactionTime = Time.time - spawnTime;
+        float timeBonus = Mathf.Max(0, 1.5f - reactionTime);
+        score += Mathf.RoundToInt(timeBonus * 20);
+
+        GameManager.Instance.AddScore(score);
+        Destroy(gameObject);
     }
 
     void Update()
     {
         float deltaMovement = movementDirection * movementSpeed * Time.deltaTime;
         currentOffset += deltaMovement;
-        
+
         if (movementType == MovementType.Horizontal)
         {
-            // Horizontal
             float newZ = startPosition.z + currentOffset;
-            
+
             if (currentOffset <= -movementRange)
             {
-                movementDirection = 1f; 
+                movementDirection = 1f;
                 currentOffset = -movementRange;
                 newZ = startPosition.z + currentOffset;
             }
@@ -53,17 +71,16 @@ public class Target : MonoBehaviour
                 currentOffset = movementRange;
                 newZ = startPosition.z + currentOffset;
             }
-            
+
             transform.position = new Vector3(startPosition.x, startPosition.y, newZ);
         }
         else
         {
-            // Vertical 
             float newY = startPosition.y + currentOffset;
-            
+
             if (newY <= minYPosition)
             {
-                movementDirection = 1f; 
+                movementDirection = 1f;
                 currentOffset = minYPosition - startPosition.y;
                 newY = minYPosition;
             }
@@ -73,7 +90,7 @@ public class Target : MonoBehaviour
                 currentOffset = movementRange;
                 newY = startPosition.y + currentOffset;
             }
-            
+
             transform.position = new Vector3(startPosition.x, newY, startPosition.z);
         }
     }
