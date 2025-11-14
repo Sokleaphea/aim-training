@@ -6,37 +6,33 @@ public class TargetSpawner : MonoBehaviour
 {
     [Header("Spawn Settings")]
     public GameObject targetPrefab;
-    public Transform arenaTransform;  // Assign the Arena game object in the inspector
-    public float spawnInterval = 0.5f;  // Time between spawns
     public float totalSpawnTime = 30f; // Total time to spawn targets
     
-    [Header("Arena Bounds")]
-    public Vector3 arenaCenter = Vector3.zero;
-    public Vector3 arenaSize = new Vector3(50f, 20f, 50f); // Adjust based on your Arena size
-    
-    private float spawnTimer = 0f;
     private float gameTimer = 0f;
     private bool isSpawning = false;
     private GameObject currentTarget = null;
+    private GameObject prefabReference = null; // Backup reference to the prefab asset
 
     void Start()
     {
-        // If arenaTransform is not assigned, try to find it
-        if (arenaTransform == null)
+        // Store a backup reference to the prefab before anything gets destroyed
+        // This ensures we can still spawn even if the original target is destroyed
+        if (targetPrefab != null)
         {
-            GameObject arena = GameObject.Find("Arena 1");
-            if (arena != null)
-            {
-                arenaTransform = arena.transform;
-                CalculateArenaBounds();
-            }
+            prefabReference = targetPrefab;
         }
         else
         {
-            CalculateArenaBounds();
+            Debug.LogError("Target Prefab is not assigned in TargetSpawner!");
+            return;
         }
         
-        StartSpawning();
+        // Start the game timer - original target in scene is the first target
+        isSpawning = true;
+        gameTimer = 0f;
+        
+        // Find and track the original target in the scene
+        FindAndTrackOriginalTarget();
     }
 
     void Update()
@@ -53,76 +49,115 @@ public class TargetSpawner : MonoBehaviour
         }
 
         // Check if current target is destroyed or doesn't exist
-        if (currentTarget == null)
+        // Use == false to properly check for destroyed Unity objects
+        if (currentTarget == null || currentTarget == false)
         {
-            spawnTimer += Time.deltaTime;
-            
-            // Spawn new target after spawn interval
-            if (spawnTimer >= spawnInterval)
-            {
-                SpawnTarget();
-                spawnTimer = 0f;
-            }
+            // Spawn a new clone immediately when current target is destroyed
+            SpawnTarget();
         }
     }
 
-    void StartSpawning()
+    void FindAndTrackOriginalTarget()
     {
-        isSpawning = true;
-        gameTimer = 0f;
-        spawnTimer = 0f;
-        SpawnTarget(); // Spawn first target immediately
+        // Find the original Target object in the scene (not a clone)
+        Target[] allTargets = FindObjectsOfType<Target>();
+        
+        foreach (Target target in allTargets)
+        {
+            // Track the original target (the one not spawned by us)
+            if (!target.name.Contains("(Clone)"))
+            {
+                currentTarget = target.gameObject;
+                break;
+            }
+        }
     }
 
     void SpawnTarget()
     {
-        if (targetPrefab == null)
+        // Use the backup prefab reference if targetPrefab becomes null
+        GameObject prefabToUse = prefabReference != null ? prefabReference : targetPrefab;
+        
+        if (prefabToUse == null)
         {
-            Debug.LogError("Target Prefab is not assigned!");
+            Debug.LogError("Target Prefab is not available! Make sure to assign the Prefab Asset (from Assets/Prefab/Target.prefab), not the scene instance.");
             return;
         }
 
-        // Calculate random position within arena bounds
-        Vector3 randomPosition = GetRandomPositionInArena();
+        // Only spawn if no target currently exists
+        if (currentTarget != null && currentTarget != false)
+        {
+            return;
+        }
+
+        // Calculate spawn position: fixed x and y, random z
+        Vector3 spawnPosition = GetSpawnPosition();
         
-        // Spawn the target
-        currentTarget = Instantiate(targetPrefab, randomPosition, Quaternion.identity);
+        // Spawn a clone of the target prefab and track it
+        currentTarget = Instantiate(prefabToUse, spawnPosition, Quaternion.identity);
+        
+        // Ensure the Target script component exists (in case prefab doesn't have it)
+        Target targetScript = currentTarget.GetComponent<Target>();
+        if (targetScript == null)
+        {
+            // Add the Target script if it's missing
+            targetScript = currentTarget.AddComponent<Target>();
+            
+            // Copy settings from the original target if it exists
+            Target originalTarget = FindOriginalTargetForSettings();
+            if (originalTarget != null)
+            {
+                targetScript.movementRange = originalTarget.movementRange;
+                targetScript.movementSpeed = originalTarget.movementSpeed;
+                targetScript.minYPosition = originalTarget.minYPosition;
+                targetScript.maxRadius = originalTarget.maxRadius;
+            }
+        }
+        
+        // Randomly choose between Horizontal and Vertical movement
+        targetScript.movementType = (Target.MovementType)Random.Range(0, 2);
+        
+        // Tag ALL colliders in the spawned target (including child objects)
+        TagAllColliders(currentTarget);
     }
 
-    Vector3 GetRandomPositionInArena()
+    void TagAllColliders(GameObject target)
     {
-        // Calculate random position within arena bounds
-        float x = Random.Range(arenaCenter.x - arenaSize.x / 2f, arenaCenter.x + arenaSize.x / 2f);
-        float y = Random.Range(arenaCenter.y - arenaSize.y / 2f, arenaCenter.y + arenaSize.y / 2f);
-        float z = Random.Range(arenaCenter.z - arenaSize.z / 2f, arenaCenter.z + arenaSize.z / 2f);
+        // Get all colliders in the target and its children
+        Collider[] allColliders = target.GetComponentsInChildren<Collider>();
+        
+        foreach (Collider col in allColliders)
+        {
+            // Set the "Target" tag on the GameObject that has the collider
+            col.gameObject.tag = "Target";
+        }
+        
+        // Also tag the root GameObject
+        target.tag = "Target";
+    }
+
+    Target FindOriginalTargetForSettings()
+    {
+        // Find the original Target object to copy settings from
+        Target[] allTargets = FindObjectsOfType<Target>();
+        
+        foreach (Target target in allTargets)
+        {
+            if (!target.name.Contains("(Clone)"))
+            {
+                return target;
+            }
+        }
+        return null;
+    }
+
+    Vector3 GetSpawnPosition()
+    {
+        // Fixed x and y, random z in range 110-120
+        float x = 80f;
+        float y = -24f;
+        float z = Random.Range(110f, 120f);
         
         return new Vector3(x, y, z);
-    }
-
-    void CalculateArenaBounds()
-    {
-        if (arenaTransform == null) return;
-
-        // Get all renderers in the arena to calculate bounds
-        Renderer[] renderers = arenaTransform.GetComponentsInChildren<Renderer>();
-        
-        if (renderers.Length > 0)
-        {
-            Bounds bounds = renderers[0].bounds;
-            foreach (Renderer renderer in renderers)
-            {
-                bounds.Encapsulate(renderer.bounds);
-            }
-            
-            arenaCenter = bounds.center;
-            arenaSize = bounds.size;
-        }
-        else
-        {
-            // Fallback: use arena transform position and default size
-            arenaCenter = arenaTransform.position;
-            // You may need to adjust these values based on your Arena size
-            arenaSize = new Vector3(50f, 20f, 50f);
-        }
     }
 }
