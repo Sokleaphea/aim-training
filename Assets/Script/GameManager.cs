@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
+using TMPro;
 
 public class GameManager : MonoBehaviour
 {
@@ -7,6 +9,13 @@ public class GameManager : MonoBehaviour
     private int totalScore = 0;
     private int totalHits = 0;
     private int totalShots = 0;
+    // public float gameDuration = 30f;
+    // private float elapsedTime = 0f;
+
+    public int winScore = 100;
+    public static int FinalScore = 0;
+    // public GameObject winPanel;
+    // public TMP_Text finalScoreText;
     
     [Header("Game Start Settings")]
     public GameObject startTextObject; 
@@ -31,14 +40,22 @@ public class GameManager : MonoBehaviour
         {
             StartGame();
         }
+        // if (gameStarted)
+        // {
+        //     elapsedTime += elapsedTime.deltaTime;
+        //     if (elapsedTime >= gameDuration)
+        //     {
+        //         EndGame();
+        //     }
+        // }
     }
 
     void StartGame()
     {
         gameStarted = true;
         gameEnded = false;
-        
-        if (startTextObject != null)
+        // elapsedTime = 0f;
+        if (startTextObject != null) 
         {
             startTextObject.SetActive(false);
         }
@@ -46,11 +63,19 @@ public class GameManager : MonoBehaviour
 
     public void EndGame()
     {
+        if (gameEnded) return;
         gameEnded = true;
         gameStarted = false;
         
         float accuracy = totalShots == 0 ? 0 : ((float)totalHits / totalShots) * 100f;
         Debug.Log($"Game Over! Final Score: {totalScore} | Accuracy: {accuracy:F1}% | Hits: {totalHits}/{totalShots}");
+        if (totalScore >= winScore)
+        {
+            SceneManager.LoadScene("WinScene");
+        } else
+        {
+            SceneManager.LoadScene("GameOver");      
+        }
     }
 
     // Called when a target is hit
@@ -59,10 +84,28 @@ public class GameManager : MonoBehaviour
         if (!gameStarted) return; // Don't count score if game hasn't started
         
         totalScore += score;
+        FinalScore = totalScore;
         totalHits++;
         UpdateUI();
+        // CheckWinCondition();
+    }
+    void CheckWinCondition()
+    {
+        // if ( !gameEnded && totalScore >= winScore)
+        // {
+        //     WinScene();
+        // }
     }
 
+    void WinScene()
+    {
+        gameEnded = true;
+        gameStarted = false;
+        FinalScore = totalScore;
+
+        Debug.Log($"You win: " + totalScore);
+        SceneManager.LoadScene("WinScene");
+    }
     // Optional: call this for every shot fired
     public void RegisterShot()
     {
