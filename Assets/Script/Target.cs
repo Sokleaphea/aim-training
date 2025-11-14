@@ -16,10 +16,12 @@ public class Target : MonoBehaviour
     private Vector3 startPosition;
     private float movementDirection = 1f;
     private float currentOffset = 0f;
+    private GameManager gameManager;
 
     void Start()
     {
         startPosition = transform.position;
+        gameManager = GameManager.Instance;
         
         movementType = MovementType.Horizontal;
         
@@ -27,18 +29,20 @@ public class Target : MonoBehaviour
         {
             minYPosition = startPosition.y;
         }
-        
-        // Debug.Log($"Target started at {startPosition}, Movement Type: {movementType}, Speed: {movementSpeed}, Range: {movementRange}, Min Y: {minYPosition}");
     }
 
     void Update()
     {
+        if (gameManager == null || !gameManager.IsGameStarted)
+        {
+            return;
+        }
+        
         float deltaMovement = movementDirection * movementSpeed * Time.deltaTime;
         currentOffset += deltaMovement;
         
         if (movementType == MovementType.Horizontal)
         {
-            // Horizontal
             float newZ = startPosition.z + currentOffset;
             
             if (currentOffset <= -movementRange)
@@ -58,7 +62,6 @@ public class Target : MonoBehaviour
         }
         else
         {
-            // Vertical 
             float newY = startPosition.y + currentOffset;
             
             if (newY <= minYPosition)
