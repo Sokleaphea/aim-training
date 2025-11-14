@@ -29,6 +29,7 @@ public class PlayerShooting : MonoBehaviour
                         targetScript.OnHit(hit.point);
                 }
                 GameManager.Instance.RegisterShot();
+
             }
         }
     }

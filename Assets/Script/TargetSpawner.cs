@@ -7,7 +7,7 @@ public class TargetSpawner : MonoBehaviour
     [Header("Spawn Settings")]
     public GameObject targetPrefab;
     public Transform arenaTransform;  // Assign the Arena game object in the inspector
-    public float spawnInterval = 2f;  // Time between spawns
+    public float spawnInterval = 0.5f;  // Time between spawns
     public float totalSpawnTime = 30f; // Total time to spawn targets
     
     [Header("Arena Bounds")]
