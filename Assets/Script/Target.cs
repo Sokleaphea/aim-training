@@ -8,10 +8,7 @@ public class Target : MonoBehaviour
     private float spawnTime;
 
     public enum MovementType
-    {
-        Horizontal,
-        Vertical
-    }
+    { Horizontal, Vertical }
 
     [Header("Movement Settings")]
     public MovementType movementType = MovementType.Horizontal;
