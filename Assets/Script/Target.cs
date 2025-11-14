@@ -52,7 +52,6 @@ public class Target : MonoBehaviour
 
     void Update()
     {
-        // Don't move until the game has started
         if (!GameManager.Instance.GameStarted)
         {
             return;

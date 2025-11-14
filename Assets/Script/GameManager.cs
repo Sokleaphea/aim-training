@@ -9,7 +9,7 @@ public class GameManager : MonoBehaviour
     private int totalShots = 0;
     
     [Header("Game Start Settings")]
-    public GameObject startTextObject; // Assign the UI Text/TextMeshPro object in the inspector
+    public GameObject startTextObject; 
     
     private bool gameStarted = false;
     public bool GameStarted { get { return gameStarted; } }
