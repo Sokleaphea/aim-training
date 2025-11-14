@@ -22,12 +22,16 @@ public class Target : MonoBehaviour
     private Vector3 startPosition;
     private float movementDirection = 1f;
     private float currentOffset = 0f;
+    private GameManager gameManager;
 
     void Start()
     {
         spawnTime = Time.time;
         startPosition = transform.position;
-
+        gameManager = GameManager.Instance;
+        
+        movementType = MovementType.Horizontal;
+        
         if (minYPosition == 0f)
         {
             minYPosition = startPosition.y;
@@ -39,26 +43,34 @@ public class Target : MonoBehaviour
         Collider targetCollider = GetComponent<Collider>();
         float distance = Vector3.Distance(hitPoint, targetCollider.bounds.center);
         float accuracy = Mathf.Clamp01(1 - (distance / maxRadius));
-
         int score = Mathf.RoundToInt(accuracy * 100);
-
+        
         float reactionTime = Time.time - spawnTime;
         float timeBonus = Mathf.Max(0, 1.5f - reactionTime);
         score += Mathf.RoundToInt(timeBonus * 20);
-
-        GameManager.Instance.AddScore(score);
+        
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.AddScore(score);
+        }
+        
         Destroy(gameObject);
     }
 
     void Update()
     {
+        if (gameManager == null || !gameManager.IsGameStarted)
+        {
+            return;
+        }
+        
         float deltaMovement = movementDirection * movementSpeed * Time.deltaTime;
         currentOffset += deltaMovement;
-
+        
         if (movementType == MovementType.Horizontal)
         {
             float newZ = startPosition.z + currentOffset;
-
+            
             if (currentOffset <= -movementRange)
             {
                 movementDirection = 1f;
@@ -71,13 +83,13 @@ public class Target : MonoBehaviour
                 currentOffset = movementRange;
                 newZ = startPosition.z + currentOffset;
             }
-
+            
             transform.position = new Vector3(startPosition.x, startPosition.y, newZ);
         }
         else
         {
             float newY = startPosition.y + currentOffset;
-
+            
             if (newY <= minYPosition)
             {
                 movementDirection = 1f;
@@ -90,7 +102,7 @@ public class Target : MonoBehaviour
                 currentOffset = movementRange;
                 newY = startPosition.y + currentOffset;
             }
-
+            
             transform.position = new Vector3(startPosition.x, newY, startPosition.z);
         }
     }
