@@ -4,14 +4,20 @@ using UnityEngine;
 
 public class Target : MonoBehaviour
 {
+    public float maxRadius = 0.6f;
+    private float spawnTime;
+
     public enum MovementType
-    { Horizontal, Vertical }
+    {
+        Horizontal,
+        Vertical
+    }
 
     [Header("Movement Settings")]
     public MovementType movementType = MovementType.Horizontal;
     public float movementRange = 5f;
     public float movementSpeed = 2f;
-    public float minYPosition = 0f; 
+    public float minYPosition = 0f;
 
     private Vector3 startPosition;
     private float movementDirection = 1f;
@@ -20,6 +26,7 @@ public class Target : MonoBehaviour
 
     void Start()
     {
+        spawnTime = Time.time;
         startPosition = transform.position;
         gameManager = GameManager.Instance;
         
@@ -29,6 +36,25 @@ public class Target : MonoBehaviour
         {
             minYPosition = startPosition.y;
         }
+    }
+
+    public void OnHit(Vector3 hitPoint)
+    {
+        Collider targetCollider = GetComponent<Collider>();
+        float distance = Vector3.Distance(hitPoint, targetCollider.bounds.center);
+        float accuracy = Mathf.Clamp01(1 - (distance / maxRadius));
+        int score = Mathf.RoundToInt(accuracy * 100);
+        
+        float reactionTime = Time.time - spawnTime;
+        float timeBonus = Mathf.Max(0, 1.5f - reactionTime);
+        score += Mathf.RoundToInt(timeBonus * 20);
+        
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.AddScore(score);
+        }
+        
+        Destroy(gameObject);
     }
 
     void Update()
@@ -47,7 +73,7 @@ public class Target : MonoBehaviour
             
             if (currentOffset <= -movementRange)
             {
-                movementDirection = 1f; 
+                movementDirection = 1f;
                 currentOffset = -movementRange;
                 newZ = startPosition.z + currentOffset;
             }
@@ -66,7 +92,7 @@ public class Target : MonoBehaviour
             
             if (newY <= minYPosition)
             {
-                movementDirection = 1f; 
+                movementDirection = 1f;
                 currentOffset = minYPosition - startPosition.y;
                 newY = minYPosition;
             }
