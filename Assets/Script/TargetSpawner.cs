@@ -27,8 +27,8 @@ public class TargetSpawner : MonoBehaviour
             return;
         }
         
-        // Start the game timer - original target in scene is the first target
-        isSpawning = true;
+        // Don't start spawning yet - wait for game to start
+        isSpawning = false;
         gameTimer = 0f;
         
         // Find and track the original target in the scene
@@ -37,6 +37,19 @@ public class TargetSpawner : MonoBehaviour
 
     void Update()
     {
+        // Wait for game to start before spawning
+        if (!GameManager.Instance.GameStarted)
+        {
+            return;
+        }
+        
+        // Start spawning when game starts
+        if (!isSpawning && GameManager.Instance.GameStarted)
+        {
+            isSpawning = true;
+            gameTimer = 0f;
+        }
+        
         if (!isSpawning) return;
 
         gameTimer += Time.deltaTime;
