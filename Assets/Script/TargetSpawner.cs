@@ -6,12 +6,13 @@ public class TargetSpawner : MonoBehaviour
 {
     [Header("Spawn Settings")]
     public GameObject targetPrefab;
-    public float totalSpawnTime = 30f; 
+    public float gameDuration = 30f; 
     
     private float gameTimer = 0f;
     private bool isSpawning = false;
     private GameObject currentTarget = null;
-    private GameObject prefabReference = null; 
+    private GameObject prefabReference = null;
+    private int lastLoggedSecond = -1; 
 
     void Start()
     {
@@ -42,15 +43,26 @@ public class TargetSpawner : MonoBehaviour
         {
             isSpawning = true;
             gameTimer = 0f;
+            lastLoggedSecond = -1; 
         }
         
         if (!isSpawning) return;
 
         gameTimer += Time.deltaTime;
         
-        if (gameTimer >= totalSpawnTime)
+        float remainingTime = gameDuration - gameTimer;
+        int currentSecond = Mathf.CeilToInt(remainingTime);
+        
+        if (currentSecond != lastLoggedSecond && currentSecond > 0)
         {
-            isSpawning = false;
+            lastLoggedSecond = currentSecond;
+            Debug.Log($"Time Remaining: {currentSecond} seconds");
+        }
+        
+        if (gameTimer >= gameDuration)
+        {
+            Debug.Log("Time's Up! Game Over!");
+            EndGame();
             return;
         }
 
@@ -58,6 +70,19 @@ public class TargetSpawner : MonoBehaviour
         {
             SpawnTarget();
         }
+    }
+
+    void EndGame()
+    {
+        isSpawning = false;
+        
+        Target[] allTargets = FindObjectsOfType<Target>();
+        foreach (Target target in allTargets)
+        {
+            Destroy(target.gameObject);
+        }
+        
+        GameManager.Instance.EndGame();
     }
 
     void FindAndTrackOriginalTarget()
@@ -80,7 +105,7 @@ public class TargetSpawner : MonoBehaviour
         
         if (prefabToUse == null)
         {
-            Debug.LogError("Target Prefab is not available! Make sure to assign the Prefab Asset (from Assets/Prefab/Target.prefab), not the scene instance.");
+            Debug.LogError("Target Prefab is not available!");
             return;
         }
 

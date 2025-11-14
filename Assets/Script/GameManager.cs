@@ -12,7 +12,9 @@ public class GameManager : MonoBehaviour
     public GameObject startTextObject; 
     
     private bool gameStarted = false;
+    private bool gameEnded = false;
     public bool GameStarted { get { return gameStarted; } }
+    public bool GameEnded { get { return gameEnded; } }
 
     void Awake()
     {
@@ -25,8 +27,7 @@ public class GameManager : MonoBehaviour
 
     void Update()
     {
-        // Check for space key to start the game
-        if (!gameStarted && Input.GetKeyDown(KeyCode.Space))
+        if (!gameStarted && !gameEnded && Input.GetKeyDown(KeyCode.Space))
         {
             StartGame();
         }
@@ -35,12 +36,21 @@ public class GameManager : MonoBehaviour
     void StartGame()
     {
         gameStarted = true;
+        gameEnded = false;
         
-        // Hide the start text
         if (startTextObject != null)
         {
             startTextObject.SetActive(false);
         }
+    }
+
+    public void EndGame()
+    {
+        gameEnded = true;
+        gameStarted = false;
+        
+        float accuracy = totalShots == 0 ? 0 : ((float)totalHits / totalShots) * 100f;
+        Debug.Log($"Game Over! Final Score: {totalScore} | Accuracy: {accuracy:F1}% | Hits: {totalHits}/{totalShots}");
     }
 
     // Called when a target is hit
