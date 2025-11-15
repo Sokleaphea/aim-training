@@ -68,7 +68,7 @@ public class GameManager : MonoBehaviour
         gameStarted = false;
         
         float accuracy = totalShots == 0 ? 0 : ((float)totalHits / totalShots) * 100f;
-        Debug.Log($"Game Over! Final Score: {totalScore} | Accuracy: {accuracy:F1}% | Hits: {totalHits}/{totalShots}");
+        Debug.Log($"The Game is over! Final Score: {totalScore} | Accuracy: {accuracy:F1}% | Hits: {totalHits}/{totalShots}");
         if (totalScore >= winScore)
         {
             SceneManager.LoadScene("WinScene");
